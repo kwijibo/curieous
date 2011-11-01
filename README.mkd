@@ -31,7 +31,11 @@ exists.
 ## RdfBuilder class usage
 
 ### Basic graph building
+
+
 ``
+
+
     $Rdf = new RdfBuilder();
     $Rdf->thing('http://example.com/person/1')
         ->a('foaf:Person')
@@ -47,11 +51,15 @@ exists.
     
     echo $Rdf->turtle();    
     
+    
+    
 ``
 
 ### Create vocabulary through usage
 
 ``
+
+
     $Rdf->create_vocabulary('ex', 'http://example.com/ns#', 'Example Vocabulary', 'http://keithalexander.co.uk/id/me');
     // arguments are: prefix, namespace, label, creator URI
 
@@ -63,4 +71,6 @@ exists.
         // creates rdf:Property with range of type of object if present
 
     $Rdf->write_vocabulary_to_file('ex', 'ex.vocab.ttl');
+
+
 ``
