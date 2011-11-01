@@ -50,7 +50,11 @@ exists.
     ->is('foaf:basedNear')->of('http://example.com/person/1');
     
     echo $Rdf->turtle();    
+    // prints turtle
     
+    echo $Rdf->dump_ntriples();
+    // echos graph as ntriples and resets the graph 
+    // (good for keeping memory footprint small during  non-tiny data conversions)
     
     
 ``
