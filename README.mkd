@@ -9,6 +9,7 @@ exists.
 
 ## Usage
 ``
+
     define('MORIARTY_ARC_DIR', '../arc/');
     require '../moriarty/httprequestfactory.class.php';
     require '../moriarty/simplegraph.class.php';
@@ -25,4 +26,41 @@ exists.
     var_dump($curie->check('dc:title')); //works
     var_dump($curie->check('foaf:title')); //throws exception 
 
+``
+
+## RdfBuilder class usage
+
+### Basic graph building
+``
+    $Rdf = new RdfBuilder();
+    $Rdf->thing('http://example.com/person/1')
+        ->a('foaf:Person')
+        ->label("Arlo Eisenberg")
+        ->has('foaf:age')->dt(29, 'xsd:integer')
+        ->has('foaf:knows')->r('http://example.com/person/2')
+        ->is('rel:siblingOf')->of('http://example.com/person/3');
+    
+    $Rdf->thing_from_label('http://example.com/city/', 'Edinburgh')
+    // uri namespace, label
+    ->a('ex:City')
+    ->is('foaf:basedNear')->of('http://example.com/person/1');
+    
+    echo $Rdf->turtle();    
+    
+``
+
+### Create vocabulary through usage
+
+``
+    $Rdf->create_vocabulary('ex', 'http://example.com/ns#', 'Example Vocabulary', 'http://keithalexander.co.uk/id/me');
+    // arguments are: prefix, namespace, label, creator URI
+
+    $Rdf->thing_from_label('http://example.com/city/', 'Edinburgh')
+        ->a('ex:City') // creates rdfs:Class
+        ->has('ex:population')->dt(500000, 'xsd:integer') //creates owl:DatatypeProperty
+        ->has('dcterms:description')->l('Edinburgh is the capital city of Scotland.', 'en-gb') //creates rdf:Property
+        ->has('ex:country')->r('http://dbpedia.org/resource/United_Kingdom');  
+        // creates rdf:Property with range of type of object if present
+
+    $Rdf->write_vocabulary_to_file('ex', 'ex.vocab.ttl');
 ``
