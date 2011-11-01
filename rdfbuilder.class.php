@@ -74,9 +74,11 @@ class RdfBuilder {
       return trim(preg_replace('/[^0-9a-zA-Z]+/','_',$text)); 
     }
 
-    function term_should_be_created($curie){
+    function term_should_be_created($term){
      foreach($this->vocabs_to_generate as $prefix => $ns){
-      if(strpos($curie, $prefix.':')===0){
+      if(strpos($term, $prefix.':')===0){
+        return true;
+      } else if(strpos($term, $ns)===0){
         return true;
       }
     }
@@ -84,6 +86,15 @@ class RdfBuilder {
   }
 
 
+    function write_vocabulary_to_file($prefix, $file){
+      $turtle = $this->vocab_builder->turtle();
+      file_put_contents($file, $turtle);
+    }
+
+
+  function get_vocab_builder(){
+    return $this->vocab_builder;
+  }
 
 }
 
@@ -123,16 +134,36 @@ class RdfNode {
 
   function l($v, $lang=false){
     $this->graph->add_literal_triple($this->uri, $this->property, $v, $lang);
+    if($this->builder->term_should_be_created($this->property)){
+      $this->create_property($this->property, uri('rdfs:Literal'));
+    }
+
     return $this;
   }
 
   function r($v){
     $this->graph->add_resource_triple($this->uri, $this->property, $v);
+    if($this->builder->term_should_be_created($this->property)){
+      if(!$range = $this->graph->get_first_resource($v, uri('rdf:type'))){
+        $range = uri('rdfs:Resource');
+      }
+      $this->create_property($this->property, $range);
+    }
     $this->last_object = $v;
     return $this;
   }
 
   function dt($v, $dt){
+    if($dt){ 
+      $dt = check($dt);
+      $range = $dt;
+    } else {
+      $range = uri('rdfs:Literal');
+    }
+    if($this->builder->term_should_be_created($this->property)){
+      $this->create_property($this->property, $range);
+      $this->builder->vocab_builder->thing($this->property)->a('owl:DatatypeProperty');
+    }
     $this->graph->add_literal_triple($this->uri, $this->property, $v, 0, $dt);
     return $this;
   }
@@ -140,6 +171,7 @@ class RdfNode {
    function a($class_type){
      if($this->builder->term_should_be_created($class_type)){
         $class_uri = uri($class_type);
+        $this->create_class($class_type);
      } else {
         $class_uri = check($class_type);
      }
@@ -153,9 +185,9 @@ class RdfNode {
   }
 
   function create_property($p, $range=false){
-    if(preg_match('@(.+?[#/])([^#/]+)@', $p, $m)){
+    if(preg_match('@(.+?[#/])([^#/]+)$@', $p, $m)){
       list($all, $ns, $localname) = $m;
-      $label = preg_replace('/([a-z])([A-Z])/','$1 $2', str_replace('_',' ', $localname));
+      $label = ucwords(preg_replace('/([a-z])([A-Z])/','$1 $2', str_replace('_',' ', $localname)));
     } else {
       return false;
     }
@@ -164,6 +196,7 @@ class RdfNode {
       ->label($label, 'en')
       ->has('rdfs:comment')->l($label, 'en')
       ->has('rdfs:isDefinedBy')->r($ns)
+      ->is('ov:defines')->of($ns)
       ->has('rdfs:range')->r($range);
     if($type = $this->graph->get_first_resource($this->uri, RDF_TYPE)){
       $Property->has('rdfs:domain')->r($type);
@@ -171,13 +204,17 @@ class RdfNode {
   }
 
   function create_class($class){
-      if(preg_match('@(.+?[#/])([^#/]+)@', $p, $m)){
+      if(preg_match('@(.+?[#/])([^#/]+)$@', $class, $m)){
       list($all, $ns, $localname) = $m;
       $label = preg_replace('/([a-z])([A-Z])/','$1 $2', str_replace('_',' ', $localname));
     } else {
       return false;
     }
-      $class = $this->builder->vocab_builder->thing($class)->a('rdfs:Class');
+      $class = $this->builder->vocab_builder->thing($class)->a('rdfs:Class')
+        ->label($label, 'en')
+        ->has('rdfs:isDefinedBy')->r($ns)
+        ->is('ov:defines')->of($ns)
+        ->has('rdfs:comment')->l($label, 'en');
 
   }
 
