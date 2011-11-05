@@ -112,6 +112,10 @@ class RdfNode {
     return $this->uri;
   }
 
+  function object(){
+    return new RdfNode($this->last_object, $this->builder);
+  }
+
   function has($curie){
     if($this->builder->term_should_be_created($curie)){
       $this->property = uri($curie);
