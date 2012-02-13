@@ -62,6 +62,7 @@ class Curieous {
       $this->curies[$curie] = $uri;
       return $uri;
     } else {
+      echo $this->vocabulary_graph->to_turtle();
       throw new CurieousNonExistentUriException("{$curie} transformed to <{$uri}> did not dereference .");
     }
   }

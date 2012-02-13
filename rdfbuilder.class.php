@@ -1,5 +1,5 @@
 <?php
-require '../curieous/curieous.php';
+require 'curieous.php';
 
 $curieous = new Curieous();
 
@@ -132,6 +132,13 @@ class RdfNode {
 
   function of($v){
     $this->graph->add_resource_triple($v, $this->property, $this->uri);
+    if($this->builder->term_should_be_created($this->property)){
+      if(!$range = $this->graph->get_first_resource($v, uri('rdf:type'))){
+        $range = uri('rdfs:Resource');
+      }
+      $this->create_property($this->property, $range);
+    }
+
     $this->last_object = $v;
     return $this;
   }
@@ -175,7 +182,7 @@ class RdfNode {
    function a($class_type){
      if($this->builder->term_should_be_created($class_type)){
         $class_uri = uri($class_type);
-        $this->create_class($class_type);
+        $this->create_class($class_uri);
      } else {
         $class_uri = check($class_type);
      }
@@ -208,7 +215,7 @@ class RdfNode {
   }
 
   function create_class($class){
-      if(preg_match('@(.+?[#/])([^#/]+)$@', $class, $m)){
+    if(preg_match('@(.+?[#/])([^#/]+)$@', $class, $m)){
       list($all, $ns, $localname) = $m;
       $label = preg_replace('/([a-z])([A-Z])/','$1 $2', str_replace('_',' ', $localname));
     } else {
