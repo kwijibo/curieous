@@ -22,9 +22,15 @@ class RdfBuilder {
     var $graph;
     var $vocab_builder;
     var $vocabs_to_generate = array();
+    var $dont_check_namespaces = array();
 
     function __construct(){
       $this->graph = new SimpleGraph();
+    }
+
+    function dont_check_namespace($prefix){
+      $this->dont_check_namespaces[$prefix] = true;
+      
     }
 
     function create_vocabulary($prefix,$namespace, $label, $creator){
@@ -70,8 +76,8 @@ class RdfBuilder {
       return $ntriples;
     }
 
-    function urlize($text){
-      return trim(preg_replace('/[^0-9a-zA-Z]+/','_',$text)); 
+    function urlize($text, $replacementString='_'){
+      return trim(preg_replace('/[^0-9a-zA-Z]+/', $replacementString, $text)); 
     }
 
     function term_should_be_created($term){
@@ -79,11 +85,23 @@ class RdfBuilder {
       if(strpos($term, $prefix.':')===0){
         return true;
       } else if(strpos($term, $ns)===0){
-        return true;
-      }
+          return true;
+        }
+       }
+      return false;
     }
-    return false;
-  }
+
+    function term_should_be_checked($curie){
+       list($prefix, $localname) = explode(':', $curie);
+
+       if(isset($this->dont_check_namespaces[$prefix]) 
+         OR 
+         $this->term_should_be_created($curie)){
+         return false;
+       } else {
+        return true;
+       }
+    }
 
 
     function write_vocabulary_to_file($prefix, $file){
@@ -117,10 +135,10 @@ class RdfNode {
   }
 
   function has($curie){
-    if($this->builder->term_should_be_created($curie)){
-      $this->property = uri($curie);
-    } else {
+    if($this->builder->term_should_be_checked($curie)){
       $this->property = check($curie);
+    } else {
+      $this->property = uri($curie);
     }
     return $this;
   }
@@ -191,7 +209,7 @@ class RdfNode {
   }
 
   function label($label, $lang=false){
-    $this->has('rdfs:label')->l($label, $lang);
+    $this->has('rdfs:label')->l(trim($label), $lang);
     return $this;
   }
 
