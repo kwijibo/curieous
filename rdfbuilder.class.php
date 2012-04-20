@@ -23,6 +23,7 @@ class RdfBuilder {
     var $vocab_builder;
     var $vocabs_to_generate = array();
     var $dont_check_namespaces = array();
+    var $do_lookups = true;
 
     function __construct(){
       $this->graph = new SimpleGraph();
@@ -33,9 +34,14 @@ class RdfBuilder {
       
     }
 
+    function do_lookups($boolean){
+      $this->do_lookups = $boolean;
+    }
+
     function create_vocabulary($prefix,$namespace, $label, $creator){
       $this->vocabs_to_generate[$prefix]=$namespace;
       $this->vocab_builder = new RdfBuilder();
+      $this->vocab_builder->do_lookups(false);
       $this->vocab_builder->thing($namespace)
         ->has('vann:preferredNamespaceUri')->l($namespace)
         ->has('vann:preferredNamespacePrefix')->l($prefix)
@@ -92,6 +98,9 @@ class RdfBuilder {
     }
 
     function term_should_be_checked($curie){
+      
+      if(!$this->do_lookups) return false;
+
        list($prefix, $localname) = explode(':', $curie);
 
        if(isset($this->dont_check_namespaces[$prefix]) 
@@ -184,7 +193,9 @@ class RdfNode {
 
   function dt($v, $dt){
     if($dt){ 
-      $dt = check($dt);
+      if(!strpos($dt,'://')){
+        $dt = check($dt);
+      }
       $range = $dt;
     } else {
       $range = uri('rdfs:Literal');

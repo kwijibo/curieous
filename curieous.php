@@ -4,7 +4,12 @@ class Curieous {
 
   const prefix_api = 'http://prefix.cc/';
 
-  var $prefixes = array();
+  var $prefixes = array(
+    'rdfs' => 'http://www.w3.org/2000/01/rdf-schema#',
+    'rdf' => 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
+    'owl' => 'http://www.w3.org/2002/07/owl#',
+    'dct' => 'http://purl.org/dc/terms/',
+  );
   var $curies = array();
   var $http_request_factory=null;
   var $vocabulary_graph=null;
